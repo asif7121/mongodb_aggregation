@@ -43,8 +43,8 @@ export const searchProperty = async (req, res) => {
 	if (!property_type) {
 		return res.status(422).json({ message: 'Property type is required.' })
 	}
-	let dateDifference
-	let matchQuery = _.pickBy({ property_type }, _.identity)
+  let dateDifference;
+  let query = [];
 
 	if (start_date && end_date) {
 		const startDate = moment(start_date, 'YYYY-MM-DD')
@@ -66,27 +66,29 @@ export const searchProperty = async (req, res) => {
 
 		dateDifference = endDate.diff(startDate, 'days')
 
-		matchQuery = {
-			...matchQuery,
+    query.push(
+		databaseHelper.GenerateMatchQuery({
 			['availability.availability_365']: { $gte: dateDifference },
 			min_nights: { $lte: dateDifference },
 			max_nights: { $gte: dateDifference },
-		}
+		})
+	)
 	}
 	if (accommodates) {
-		matchQuery = {
-			...matchQuery,
+    query.push( databaseHelper.GenerateMatchQuery( 
+      {	
 			accommodates: { $lte: parseInt(accommodates) },
 		}
+    ))
 	}
 
 	// console.log(matchQuery)
-	const query = [
+	 query = [
 		databaseHelper.GenerateAddFieldQuery({
 			max_nights: { $toInt: '$maximum_nights' },
 			min_nights: { $toInt: '$minimum_nights' },
 		}),
-		databaseHelper.GenerateMatchQuery(matchQuery),
+		databaseHelper.GenerateMatchQuery({property_type}),
   ]
   if ( search ) {
     query.push(databaseHelper.GenerateSearchQuery(['name'], search))
