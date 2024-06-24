@@ -73,7 +73,12 @@ class DatabaseHelper {
 		}
 		return query
 	}
-
+	GenerateGeoQuery ( dataObj ) {
+		const query = {
+			$geoNear: dataObj,
+		}
+		return query
+	}
 	GenerateProjectionQuery(dataObj) {
 		const query = {
 			$project: dataObj,
@@ -95,9 +100,6 @@ class DatabaseHelper {
 			$facet: {
 				list: [
 					{
-						$project: { createdAt: 1, ...inputs.projection },
-					},
-					{
 						$sort: inputs.sortObj || { _id: -1 },
 					},
 					{
@@ -105,6 +107,9 @@ class DatabaseHelper {
 					},
 					{
 						$limit: perPage,
+					},
+					{
+						$project: { createdAt: 1, ...inputs.projection },
 					},
 				],
 				totalItems: [
@@ -116,7 +121,7 @@ class DatabaseHelper {
 		}
 		const query = inputs.query
 		query.push(facetObj)
-		const data = await model.aggregate(inputs.query)
+		const data = await model.aggregate(query)
 		const totalItems =
 			data[0]?.totalItems.length > 0
 				? data[0]?.totalItems[0].count
